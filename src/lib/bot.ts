@@ -61,7 +61,8 @@ export default class Bot {
 
   // New method to create the embed object
   static createEmbedObject(url: string, title: string, description: string): any {
-    const imageRef = 'bafkreiegdbrmr4aredvl55jfyk3xxwndhk2kicg7gxvgpshkusct3wre3m'; // The blob reference
+    // Replace 'your-image-blob-reference' with the actual blob reference from Bluesky
+    const imageRef = 'bafkreiegdbrmr4aredvl55jfyk3xxwndhk2kicg7gxvgpshkusct3wre3m';
 
     return {
       "$type": "app.bsky.embed.external",
@@ -70,15 +71,11 @@ export default class Bot {
         "title": title,
         "description": description,
         "thumb": {
-          "$type": "blob",
-          "ref": {
-            "$link": imageRef
-          },
-          "mimeType": "image/png",
-          // Add the size if you know it
+          "$link": imageRef
         }
       }
     };
   }
 }
+
 
