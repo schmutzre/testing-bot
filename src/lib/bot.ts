@@ -62,4 +62,26 @@ export default class Bot {
     }
     return text;
   }
+
+  // New method to create the embed object
+  static createEmbedObject(url: string, title: string, description: string): any {
+    const imageRef = 'bafkreiegdbrmr4aredvl55jfyk3xxwndhk2kicg7gxvgpshkusct3wre3m'; // The blob reference
+
+    return {
+      "$type": "app.bsky.embed.external",
+      "external": {
+        "uri": url,
+        "title": title,
+        "description": description,
+        "thumb": {
+          "$type": "blob",
+          "ref": {
+            "$link": imageRef
+          },
+          "mimeType": "image/png",
+          // Add the size if you know it
+        }
+      }
+    };
+  }
 }

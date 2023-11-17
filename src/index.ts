@@ -19,7 +19,16 @@ async function main() {
       const { title, link, formattedText } = textData;
 
       if (!postedPapers.papers.some((paper: Paper) => paper.title === title && paper.link === link)) {
-        await Bot.run(() => Promise.resolve(formattedText));
+        // Create embed object
+        const embed = Bot.createEmbedObject(link, title, "A brief description");
+
+        // Modify this to include the embed in your post data
+        const postData = {
+          text: formattedText,
+          embed: embed
+        };
+
+        await Bot.run(() => Promise.resolve(postData));
         
         postedPapers.papers.push({ title, link });
         fs.writeFileSync(POSTED_PAPERS_PATH, JSON.stringify(postedPapers, null, 2));
@@ -38,6 +47,3 @@ async function main() {
 }
 
 main();
-
-
-
