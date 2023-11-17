@@ -1,3 +1,5 @@
+import fetch from 'node-fetch';
+global.fetch = fetch;
 import Bot from "./lib/bot.js";
 import getPostText from "./lib/getPostText.js";
 import fs from 'fs';
