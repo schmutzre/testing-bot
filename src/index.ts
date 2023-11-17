@@ -22,7 +22,7 @@ async function main() {
         // Create embed object
         const embed = Bot.createEmbedObject(link, title, "A brief description");
 
-        // Modify this to include the embed in your post data
+        // Modify the postData object to match the new run signature
         const postData = {
           text: formattedText,
           embed: embed

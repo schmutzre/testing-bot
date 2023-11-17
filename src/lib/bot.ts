@@ -29,38 +29,33 @@ export default class Bot {
   }
 
   async post(
-    text:
-      | string
-      | (Partial<AppBskyFeedPost.Record> &
-          Omit<AppBskyFeedPost.Record, "createdAt">)
+    text: string,
+    embed?: any
   ) {
-    if (typeof text === "string") {
-      const richText = new RichText({ text });
-      await richText.detectFacets(this.#agent);
-      const record = {
-        text: richText.text,
-        facets: richText.facets,
-      };
-      return this.#agent.post(record);
-    } else {
-      return this.#agent.post(text);
-    }
+    const postContent: Partial<AppBskyFeedPost.Record> & Omit<AppBskyFeedPost.Record, "createdAt"> = {
+      text: text,
+      ...(embed && { embed: embed })
+    };
+    return this.#agent.post(postContent);
   }
 
   static async run(
-    getPostText: () => Promise<string>,
+    getPostData: () => Promise<{ text: string; embed?: any }>,
     botOptions?: Partial<BotOptions>
   ) {
     const { service, dryRun } = botOptions
-      ? Object.assign({}, this.defaultOptions, botOptions)
+      ? { ...this.defaultOptions, ...botOptions }
       : this.defaultOptions;
+
     const bot = new Bot(service);
     await bot.login(bskyAccount);
-    const text = await getPostText();
+    const postData = await getPostData(); // This is now expecting an object with text and optionally an embed
+
     if (!dryRun) {
-      await bot.post(text);
+      await bot.post(postData.text, postData.embed);
     }
-    return text;
+
+    return postData;
   }
 
   // New method to create the embed object
