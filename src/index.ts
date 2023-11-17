@@ -22,12 +22,13 @@ async function main() {
         // Create embed object
         const embed = Bot.createEmbedObject(link, title, "A brief description");
 
-        // Modify the postData object to match the new run signature
+        // Prepare postData with text and embed
         const postData = {
           text: formattedText,
           embed: embed
         };
 
+        // Pass a function that resolves to postData to Bot.run
         await Bot.run(() => Promise.resolve(postData));
         
         postedPapers.papers.push({ title, link });

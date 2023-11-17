@@ -5,6 +5,7 @@ import type {
   AppBskyFeedPost,
 } from "@atproto/api";
 import atproto from "@atproto/api";
+
 const { BskyAgent, RichText } = atproto;
 
 type BotOptions = {
@@ -49,7 +50,7 @@ export default class Bot {
 
     const bot = new Bot(service);
     await bot.login(bskyAccount);
-    const postData = await getPostData(); // This is now expecting an object with text and optionally an embed
+    const postData = await getPostData();
 
     if (!dryRun) {
       await bot.post(postData.text, postData.embed);
@@ -80,3 +81,4 @@ export default class Bot {
     };
   }
 }
+
