@@ -16,27 +16,31 @@ async function main() {
 
   if (papersData && papersData.length > 0) {
     for (const textData of papersData) {
+      // Ensure that title, link, and formattedText are always defined
       const { title, link, formattedText } = textData;
+      if (title && link && formattedText) {
+        if (!postedPapers.papers.some((paper: Paper) => paper.title === title && paper.link === link)) {
+          // Create embed object
+          const embed = Bot.createEmbedObject(link, title, "A brief description");
 
-      if (!postedPapers.papers.some((paper: Paper) => paper.title === title && paper.link === link)) {
-        // Create embed object
-        const embed = Bot.createEmbedObject(link, title, "A brief description");
+          // Prepare postData with text and embed
+          const postData = {
+            text: formattedText,
+            embed: embed
+          };
 
-        // Prepare postData with text and embed
-        const postData = {
-          text: formattedText,
-          embed: embed
-        };
+          // Pass a function that resolves to postData to Bot.run
+          await Bot.run(() => Promise.resolve(postData));
+          
+          postedPapers.papers.push({ title, link });
+          fs.writeFileSync(POSTED_PAPERS_PATH, JSON.stringify(postedPapers, null, 2));
 
-        // Pass a function that resolves to postData to Bot.run
-        await Bot.run(() => Promise.resolve(postData));
-        
-        postedPapers.papers.push({ title, link });
-        fs.writeFileSync(POSTED_PAPERS_PATH, JSON.stringify(postedPapers, null, 2));
-
-        console.log(`[${new Date().toISOString()}] Posted: "${formattedText}"`);
+          console.log(`[${new Date().toISOString()}] Posted: "${formattedText}"`);
+        } else {
+          console.log(`[${new Date().toISOString()}] Already posted: "${title}"`);
+        }
       } else {
-        console.log(`[${new Date().toISOString()}] Already posted: "${title}"`);
+        console.error('One of the required fields (title, link, or formattedText) is undefined.');
       }
     }
     execSync('git add ' + POSTED_PAPERS_PATH);
