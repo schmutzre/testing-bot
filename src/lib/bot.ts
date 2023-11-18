@@ -1,4 +1,3 @@
-import fetch from 'node-fetch';
 import { bskyAccount, bskyService } from "./config.js";
 import type {
   AtpAgentLoginOpts,

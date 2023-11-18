@@ -1,4 +1,3 @@
-import fetch from 'node-fetch';
 import Parser from 'rss-parser';
 import fs from 'fs';
 
