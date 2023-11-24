@@ -1,6 +1,7 @@
 // node-fetch configuration
 import fetch, { Headers, Request, Response } from 'node-fetch';
-import { BskyAgent } from '@atproto/api';
+import pkg from '@atproto/api';
+const { BskyAgent } = pkg;
 
 if (typeof globalThis.fetch === 'undefined') {
   globalThis.fetch = fetch as any;
@@ -51,7 +52,7 @@ const imageBlobRef = {
     "$link": "bafkreiegdbrmr4aredvl55jfyk3xxwndhk2kicg7gxvgpshkusct3wre3m"
   },
   "mimeType": "image/jpeg",
-  "size": 760898  // Update with the actual size of your image
+  "size": 23527 // Update with the actual size of your image
 };
 
 async function main() {
@@ -61,17 +62,21 @@ async function main() {
     for (const textData of papersData) {
       const { title, link, formattedText } = textData;
 
-      const imageEmbed = {
-        "$type": "app.bsky.embed.images",
-        "images": [{
-          "alt": "Description of image", // Add appropriate alt text
-          "image": imageBlobRef
-        }]
+      const websiteCardEmbed = {
+        "$type": "app.bsky.embed.external",
+        "external": {
+          "uri": link,
+          "title": title,
+          "description": "Your description here", // Update with an appropriate description
+          "thumb": imageBlobRef
+        }
       };
 
       const postContent = {
-        text: formattedText,
-        embed: imageEmbed
+        "$type": "app.bsky.feed.post",
+        "text": formattedText,
+        "createdAt": new Date().toISOString(),
+        "embed": websiteCardEmbed
       };
 
       if (!postedPapers.papers.some((paper: Paper) => paper.title === title && paper.link === link)) {
