@@ -1,4 +1,6 @@
+// node-fetch configuration
 import fetch, { Headers, Request, Response } from 'node-fetch';
+import { BskyAgent } from '@atproto/api';
 
 if (typeof globalThis.fetch === 'undefined') {
   globalThis.fetch = fetch as any;
@@ -7,8 +9,29 @@ if (typeof globalThis.fetch === 'undefined') {
   globalThis.Response = Response as any;
 }
 
+BskyAgent.configure({
+  fetch: async (httpUri, httpMethod, httpHeaders, httpReqBody) => {
+    const requestOptions = {
+      method: httpMethod,
+      headers: new Headers(httpHeaders),
+      body: httpReqBody,
+    };
+    try {
+      const response = await fetch(httpUri, requestOptions);
+      const responseBody = await response.text(); // or response.json() based on your requirements
+      return {
+        status: response.status,
+        headers: Object.fromEntries(response.headers),
+        body: responseBody,
+      };
+    } catch (error) {
+      console.error('Fetch error:', error);
+      throw error;
+    }
+  },
+});
 
-
+// Rest of your script
 import Bot from "./lib/bot.js";
 import getPostText from "./lib/getPostText.js";
 import fs from 'fs';
@@ -23,7 +46,12 @@ const POSTED_PAPERS_PATH = './postedPapers.json';
 const postedPapers = JSON.parse(fs.readFileSync(POSTED_PAPERS_PATH, 'utf8'));
 
 const imageBlobRef = {
-  "$link": "bafkreiegdbrmr4aredvl55jfyk3xxwndhk2kicg7gxvgpshkusct3wre3m"
+  "$type": "blob",
+  "ref": {
+    "$link": "bafkreiegdbrmr4aredvl55jfyk3xxwndhk2kicg7gxvgpshkusct3wre3m"
+  },
+  "mimeType": "image/jpeg",
+  "size": 760898  // Update with the actual size of your image
 };
 
 async function main() {
@@ -36,12 +64,8 @@ async function main() {
       const imageEmbed = {
         "$type": "app.bsky.embed.images",
         "images": [{
-          "image": {
-            "$type": "blob",
-            "ref": imageBlobRef,
-            "mimeType": "image/jpeg",
-            // Add image size if known
-          }
+          "alt": "Description of image", // Add appropriate alt text
+          "image": imageBlobRef
         }]
       };
 
