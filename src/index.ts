@@ -1,3 +1,9 @@
+import fetch from 'node-fetch';
+
+if (!global.fetch) {
+  global.fetch = fetch;
+}
+
 import Bot from "./lib/bot.js";
 import getPostText from "./lib/getPostText.js";
 import fs from 'fs';
@@ -14,7 +20,6 @@ const postedPapers = JSON.parse(fs.readFileSync(POSTED_PAPERS_PATH, 'utf8'));
 const imageBlobRef = {
   "$link": "bafkreiegdbrmr4aredvl55jfyk3xxwndhk2kicg7gxvgpshkusct3wre3m"
 };
-const IMAGE_ALT_TEXT = "brief alt text description of the image";
 
 async function main() {
   const papersData = await getPostText();
@@ -26,7 +31,6 @@ async function main() {
       const imageEmbed = {
         "$type": "app.bsky.embed.images",
         "images": [{
-          "alt": IMAGE_ALT_TEXT,
           "image": {
             "$type": "blob",
             "ref": imageBlobRef,
