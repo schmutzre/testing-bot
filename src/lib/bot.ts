@@ -1,11 +1,5 @@
 import { bskyAccount, bskyService } from "./config.js";
-import type {
-  AtpAgentLoginOpts,
-  AtpAgentOpts,
-  AppBskyFeedPost,
-} from "@atproto/api";
 import atproto from "@atproto/api";
-
 const { BskyAgent, RichText } = atproto;
 
 type BotOptions = {
@@ -21,61 +15,42 @@ export default class Bot {
     dryRun: false,
   } as const;
 
-  constructor(service: AtpAgentOpts["service"]) {
+  constructor(service: string | URL) {
     this.#agent = new BskyAgent({ service });
   }
 
-  login(loginOpts: AtpAgentLoginOpts) {
+  login(loginOpts: any) {
     return this.#agent.login(loginOpts);
   }
 
   async post(
-    text: string,
-    embed?: any
+    content: {
+      text: string,
+      embed: any // Add proper type for embed
+    }
   ) {
-    const postContent: Partial<AppBskyFeedPost.Record> & Omit<AppBskyFeedPost.Record, "createdAt"> = {
-      text: text,
-      ...(embed && { embed: embed })
+    const record = {
+      text: content.text,
+      embed: content.embed, // Include the embed in the record
+      // Add other necessary fields as required by the Bluesky API
     };
-    return this.#agent.post(postContent);
+    return this.#agent.post(record);
   }
 
   static async run(
-    getPostData: () => Promise<{ text: string; embed?: any }>,
+    getPostContent: () => Promise<{text: string, embed: any}>,
     botOptions?: Partial<BotOptions>
   ) {
     const { service, dryRun } = botOptions
-      ? { ...this.defaultOptions, ...botOptions }
+      ? Object.assign({}, this.defaultOptions, botOptions)
       : this.defaultOptions;
-
     const bot = new Bot(service);
     await bot.login(bskyAccount);
-    const postData = await getPostData();
-
+    const content = await getPostContent();
     if (!dryRun) {
-      await bot.post(postData.text, postData.embed);
+      await bot.post(content);
     }
-
-    return postData;
-  }
-
-  // New method to create the embed object
-  static createEmbedObject(url: string, title: string, description: string): any {
-    // Replace 'your-image-blob-reference' with the actual blob reference from Bluesky
-    const imageRef = 'bafkreiegdbrmr4aredvl55jfyk3xxwndhk2kicg7gxvgpshkusct3wre3m';
-
-    return {
-      "$type": "app.bsky.embed.external",
-      "external": {
-        "uri": url,
-        "title": title,
-        "description": description,
-        "thumb": {
-          "$link": imageRef
-        }
-      }
-    };
+    return content;
   }
 }
-
 
