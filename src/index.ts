@@ -1,11 +1,11 @@
-import fetch, { Headers, Request, Response } from 'node-fetch';
-
 if (!globalThis.fetch) {
-  globalThis.fetch = fetch;
-  globalThis.Headers = Headers;
-  globalThis.Request = Request;
-  globalThis.Response = Response;
+  const nodeFetch = await import('node-fetch');
+  globalThis.fetch = nodeFetch.default;
+  globalThis.Headers = nodeFetch.Headers;
+  globalThis.Request = nodeFetch.Request;
+  globalThis.Response = nodeFetch.Response;
 }
+
 
 import Bot from "./lib/bot.js";
 import getPostText from "./lib/getPostText.js";
