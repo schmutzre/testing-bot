@@ -1,10 +1,12 @@
-if (!globalThis.fetch) {
-  const nodeFetch = await import('node-fetch');
-  globalThis.fetch = nodeFetch.default;
-  globalThis.Headers = nodeFetch.Headers;
-  globalThis.Request = nodeFetch.Request;
-  globalThis.Response = nodeFetch.Response;
+import fetch, { Headers, Request, Response } from 'node-fetch';
+
+if (typeof globalThis.fetch === 'undefined') {
+  globalThis.fetch = fetch as any;
+  globalThis.Headers = Headers as any;
+  globalThis.Request = Request as any;
+  globalThis.Response = Response as any;
 }
+
 
 
 import Bot from "./lib/bot.js";
