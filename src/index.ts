@@ -62,10 +62,13 @@ const POSTED_PAPERS_PATH = './postedPapers.json';
 const postedPapers = JSON.parse(fs.readFileSync(POSTED_PAPERS_PATH, 'utf8'));
 
 async function uploadImageAndGetBlobRef(imagePath: string) {
+  const bot = new Bot(bskyService);
+  await bot.login(bskyAccount);
+
   const image = fs.readFileSync(imagePath);
   const mimeType = 'image/jpeg'; // Change based on your image type
 
-  const response = await fetch('https://bsky.social/xrpc/com.atproto.repo.uploadBlob', {
+  const response = await bot.#agent.fetch('https://bsky.social/xrpc/com.atproto.repo.uploadBlob', {
     method: 'POST',
     headers: {
       'Content-Type': mimeType,
@@ -77,7 +80,7 @@ async function uploadImageAndGetBlobRef(imagePath: string) {
     throw new Error(`Image upload failed: ${response.statusText}`);
   }
 
-  const blobData = await response.json() as { blob: any }; // Type assertion for blobData
+  const blobData = await response.json() as { blob: any };
   return blobData.blob;
 }
 
