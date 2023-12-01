@@ -14,14 +14,19 @@ export default class Bot {
 
   async login() {
     try {
-      const session = await this.#agent.login(bskyAccount);
+      const response = await this.#agent.login(bskyAccount);
+      const session = await response.json();
       this.#accessToken = session.accessJwt; // Store the access token
     } catch (error) {
-      throw new Error(`Login failed: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Login failed: ${error.message}`);
+      } else {
+        throw new Error(`Login failed: ${String(error)}`);
+      }
     }
   }
 
-  async post(content) {
+  async post(content: { text: string; embed: any }) {
     if (!this.#accessToken) {
       throw new Error("Bot must be logged in to post content.");
     }
@@ -42,7 +47,7 @@ export default class Bot {
     return await response.json();
   }
 
-  async uploadImage(imagePath) {
+  async uploadImage(imagePath: string): Promise<any> {
     if (!this.#accessToken) {
       throw new Error("Bot must be logged in to upload images.");
     }
@@ -66,4 +71,3 @@ export default class Bot {
     return await response.json();
   }
 }
-
