@@ -3,52 +3,9 @@ import fetch, { Headers, Request, Response } from 'node-fetch';
 import pkg from '@atproto/api';
 const { BskyAgent } = pkg;
 
-if (typeof globalThis.fetch === 'undefined') {
-  globalThis.fetch = fetch as any;
-  globalThis.Headers = Headers as any;
-  globalThis.Request = Request as any;
-  globalThis.Response = Response as any;
-}
-
-BskyAgent.configure({
-  fetch: async (httpUri, httpMethod, httpHeaders, httpReqBody) => {
-    console.log('API Request Details:');
-    console.log('URI:', httpUri);
-    console.log('Method:', httpMethod);
-    console.log('Headers:', httpHeaders);
-    console.log('Body:', httpReqBody);
-
-    const requestOptions = {
-      method: httpMethod,
-      headers: new Headers(httpHeaders),
-      body: JSON.stringify(httpReqBody),
-    };
-
-    console.log('Final Request Body:', requestOptions.body);
-
-    try {
-      const response = await fetch(httpUri, requestOptions);
-      const responseBody = await response.text();
-
-      console.log('API Response Details:');
-      console.log('Status:', response.status);
-      console.log('Headers:', response.headers);
-      console.log('Body:', responseBody);
-
-      return {
-        status: response.status,
-        headers: Object.fromEntries(response.headers),
-        body: responseBody,
-      };
-    } catch (error) {
-      console.error('Fetch error:', error);
-      throw error;
-    }
-  },
-});
-
-// Rest of your script
+// Import the Bot class and configuration details
 import Bot from "./lib/bot.js";
+import { bskyService, bskyAccount } from "./config.js";
 import getPostText from "./lib/getPostText.js";
 import fs from 'fs';
 import { execSync } from 'child_process';
@@ -61,39 +18,60 @@ interface Paper {
 const POSTED_PAPERS_PATH = './postedPapers.json';
 const postedPapers = JSON.parse(fs.readFileSync(POSTED_PAPERS_PATH, 'utf8'));
 
-async function uploadImageAndGetBlobRef(imagePath: string) {
-  const bot = new Bot(bskyService);
-  await bot.login(bskyAccount);
-
-  const image = fs.readFileSync(imagePath);
-  const mimeType = 'image/jpeg'; // Change based on your image type
-
-  const response = await bot.#agent.fetch('https://bsky.social/xrpc/com.atproto.repo.uploadBlob', {
-    method: 'POST',
-    headers: {
-      'Content-Type': mimeType,
-    },
-    body: image,
-  });
-
-  if (!response.ok) {
-    throw new Error(`Image upload failed: ${response.statusText}`);
-  }
-
-  const blobData = await response.json() as { blob: any };
-  return blobData.blob;
+if (typeof globalThis.fetch === 'undefined') {
+  globalThis.fetch = fetch as any;
+  globalThis.Headers = Headers as any;
+  globalThis.Request = Request as any;
+  globalThis.Response = Response as any;
 }
+
+BskyAgent.configure({
+  // Configure fetch as per requirements
+  // ...
+});
 
 async function main() {
   try {
     const papersData = await getPostText();
+    const bot = new Bot(bskyService);
+
+    // Log in to the Bluesky API
+    await bot.login(bskyAccount);
 
     if (papersData && papersData.length > 0) {
       for (const textData of papersData) {
-        const imageBlobRef = await uploadImageAndGetBlobRef('pic.png');
+        // Use the bot to upload the image and get the blob reference
+        const imageBlobRef = await bot.uploadImage('path/to/your/image.jpg', 'image/jpeg');
 
-        // Rest of the main function code...
+        const websiteCardEmbed = {
+          "$type": "app.bsky.embed.external",
+          "external": {
+            "uri": textData.link,
+            "title": textData.title,
+            "description": "Your description here",
+            "thumb": imageBlobRef
+          }
+        };
+
+        const postContent = {
+          "$type": "app.bsky.feed.post",
+          "text": textData.formattedText,
+          "createdAt": new Date().toISOString(),
+          "embed": websiteCardEmbed
+        };
+
+        if (!postedPapers.papers.some((paper: Paper) => paper.title === textData.title && paper.link === textData.link)) {
+          await bot.post(postContent);
+          postedPapers.papers.push({ title: textData.title, link: textData.link });
+          fs.writeFileSync(POSTED_PAPERS_PATH, JSON.stringify(postedPapers, null, 2));
+          console.log(`[${new Date().toISOString()}] Posted: "${textData.formattedText}"`);
+        } else {
+          console.log(`[${new Date().toISOString()}] Already posted: "${textData.title}"`);
+        }
       }
+      execSync('git add ' + POSTED_PAPERS_PATH);
+      execSync('git commit -m "Added new posted papers"');
+      execSync('git push origin main');
     } else {
       console.log(`[${new Date().toISOString()}] No new posts to publish.`);
     }
