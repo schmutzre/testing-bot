@@ -1,6 +1,6 @@
 // node-fetch configuration
 import fetch, { Headers, Request, Response } from 'node-fetch';
-import pkg from '@atproto/api';
+import { BskyAgent } from '@atproto/api';
 
 if (typeof globalThis.fetch === 'undefined') {
   globalThis.fetch = fetch as any;
@@ -10,7 +10,12 @@ if (typeof globalThis.fetch === 'undefined') {
 }
 
 BskyAgent.configure({
-  fetch: async (httpUri, httpMethod, httpHeaders, httpReqBody) => {
+  fetch: async (
+    httpUri: any, // Update these types based on the expected types or keep as 'any' for now
+    httpMethod: any, 
+    httpHeaders: any, 
+    httpReqBody: any
+  ) => {
     const requestOptions = {
       method: httpMethod,
       headers: new Headers(httpHeaders),
@@ -96,3 +101,5 @@ async function main() {
     console.log(`[${new Date().toISOString()}] No new posts to publish.`);
   }
 }
+
+main();
