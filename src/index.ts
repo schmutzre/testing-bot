@@ -1,11 +1,8 @@
 // node-fetch configuration
 import fetch, { Headers, Request, Response } from 'node-fetch';
-import pkg from '@atproto/api';
-const { BskyAgent } = pkg;
 
 // Import the Bot class and configuration details
 import Bot from "./lib/bot.js";
-import { bskyService, bskyAccount } from "./config.js";
 import getPostText from "./lib/getPostText.js";
 import fs from 'fs';
 import { execSync } from 'child_process';
@@ -25,23 +22,18 @@ if (typeof globalThis.fetch === 'undefined') {
   globalThis.Response = Response as any;
 }
 
-BskyAgent.configure({
-  // Configure fetch as per requirements
-  // ...
-});
-
 async function main() {
   try {
     const papersData = await getPostText();
-    const bot = new Bot(bskyService);
+    const bot = new Bot(); // Instantiate Bot class
 
     // Log in to the Bluesky API
-    await bot.login(bskyAccount);
+    await bot.login();
 
     if (papersData && papersData.length > 0) {
       for (const textData of papersData) {
         // Use the bot to upload the image and get the blob reference
-        const imageBlobRef = await bot.uploadImage('path/to/your/image.jpg', 'image/jpeg');
+        const imageBlobRef = await bot.uploadImage('./image.png', 'image/png');
 
         const websiteCardEmbed = {
           "$type": "app.bsky.embed.external",
@@ -82,3 +74,4 @@ async function main() {
 }
 
 main();
+

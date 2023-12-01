@@ -1,68 +1,67 @@
-import { bskyAccount, bskyService } from "./config.js";
-import atproto from "@atproto/api";
-import fs from 'fs'; // Added to handle file system operations
-const { BskyAgent, RichText } = atproto;
-
-type BotOptions = {
-  service: string | URL;
-  dryRun: boolean;
-};
+// Assuming bskyService and bskyAccount are correctly imported from the config file
+import { bskyService, bskyAccount } from './config';
+import atproto from '@atproto/api';
+import fs from 'fs';
+const { BskyAgent } = atproto;
 
 export default class Bot {
   #agent;
+  #accessToken = '';
 
-  static defaultOptions: BotOptions = {
-    service: bskyService,
-    dryRun: false,
-  } as const;
-
-  constructor(service: string | URL) {
-    this.#agent = new BskyAgent({ service });
+  constructor() {
+    this.#agent = new BskyAgent({ service: bskyService });
   }
 
-  login(loginOpts: any) {
-    return this.#agent.login(loginOpts);
+  async login() {
+    const session = await this.#agent.login(bskyAccount);
+    this.#accessToken = session.accessJwt; // Store the access token
   }
 
-  async post(content: { text: string; embed: any }) {
-    const record = {
-      text: content.text,
-      embed: content.embed, // Include the embed in the record
-      // Add other necessary fields as required by the Bluesky API
-    };
-    return this.#agent.post(record);
-  }
+  async post(content) {
+    // Ensure the Bot is logged in and has an access token
+    if (!this.#accessToken) {
+      throw new Error("Bot must be logged in to post content.");
+    }
 
-  // New method for image upload
-  async uploadImage(imagePath: string, mimeType: string) {
-    const image = fs.readFileSync(imagePath);
-
-    const response = await this.#agent.fetch('https://bsky.social/xrpc/com.atproto.repo.uploadBlob', {
+    // Posting content using the Bluesky API
+    const response = await fetch('https://bsky.social/api/post', {
       method: 'POST',
       headers: {
-        'Content-Type': mimeType,
+        'Authorization': `Bearer ${this.#accessToken}`,
+        'Content-Type': 'application/json'
       },
-      body: image,
+      body: JSON.stringify(content)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to post content: ${response.statusText}`);
+    }
+
+    return await response.json();
+  }
+
+  async uploadImage(imagePath) {
+    // Ensure the Bot is logged in and has an access token
+    if (!this.#accessToken) {
+      throw new Error("Bot must be logged in to upload images.");
+    }
+
+    const image = fs.readFileSync(imagePath);
+    const mimeType = 'image/jpeg'; // Adjust based on your image
+
+    const response = await fetch('https://bsky.social/api/uploadImage', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.#accessToken}`,
+        'Content-Type': mimeType
+      },
+      body: image
     });
 
     if (!response.ok) {
       throw new Error(`Image upload failed: ${response.statusText}`);
     }
 
-    const blobData = await response.json() as { blob: any };
-    return blobData.blob;
-  }
-
-  static async run(getPostContent: () => Promise<{ text: string; embed: any }>, botOptions?: Partial<BotOptions>) {
-    const { service, dryRun } = botOptions
-      ? Object.assign({}, this.defaultOptions, botOptions)
-      : this.defaultOptions;
-    const bot = new Bot(service);
-    await bot.login(bskyAccount);
-    const content = await getPostContent();
-    if (!dryRun) {
-      await bot.post(content);
-    }
-    return content;
+    return await response.json();
   }
 }
