@@ -11,12 +11,8 @@ if (typeof globalThis.fetch === 'undefined') {
 }
 
 BskyAgent.configure({
-  fetch: async (
-    httpUri: any, 
-    httpMethod: any, 
-    httpHeaders: any, 
-    httpReqBody: any
-  ) => {
+  fetch: async (httpUri, httpMethod, httpHeaders, httpReqBody) => {
+    // Existing logs
     console.log('API Request Details:');
     console.log('URI:', httpUri);
     console.log('Method:', httpMethod);
@@ -29,10 +25,14 @@ BskyAgent.configure({
       body: httpReqBody,
     };
 
+    // Additional log for the final request body
+    console.log('Final Request Body:', httpReqBody);
+
     try {
       const response = await fetch(httpUri, requestOptions);
       const responseBody = await response.text();
 
+      // Existing response logs
       console.log('API Response Details:');
       console.log('Status:', response.status);
       console.log('Headers:', response.headers);
