@@ -99,10 +99,8 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(`[${new Date().toISOString()}] An error occurred:`, error);
-  if (error instanceof XRPCError) {
-    console.error('XRPCError details:', error.details); // Note: Adjust according to the actual properties of XRPCError
-  }
+  console.error(`[${new Date().toISOString()}] An error occurred:`, error.message);
+  // You can log the entire error object if needed for more details
+  console.error(error);
   process.exit(1);
 });
-
