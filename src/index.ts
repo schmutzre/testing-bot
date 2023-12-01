@@ -52,7 +52,7 @@ const imageBlobRef = {
     "$link": "bafkreiegdbrmr4aredvl55jfyk3xxwndhk2kicg7gxvgpshkusct3wre3m"
   },
   "mimeType": "image/jpeg",
-  "size": 23527 // Update with the actual size of your image
+  "size": 27565 // Update with the actual size of your image
 };
 
 async function main() {
