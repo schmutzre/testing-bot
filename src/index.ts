@@ -1,7 +1,7 @@
 // node-fetch configuration
 import fetch, { Headers, Request, Response } from 'node-fetch';
 import pkg from '@atproto/api';
-const { BskyAgent } = pkg;
+const { BskyAgent, XRPCError } = pkg;
 
 if (typeof globalThis.fetch === 'undefined') {
   globalThis.fetch = fetch as any;
@@ -19,7 +19,7 @@ BskyAgent.configure({
     };
     try {
       const response = await fetch(httpUri, requestOptions);
-      const responseBody = await response.text(); // or response.json() based on your requirements
+      const responseBody = await response.text();
       return {
         status: response.status,
         headers: Object.fromEntries(response.headers),
@@ -52,7 +52,7 @@ const imageBlobRef = {
     "$link": "bafkreiegdbrmr4aredvl55jfyk3xxwndhk2kicg7gxvgpshkusct3wre3m"
   },
   "mimeType": "image/jpeg",
-  "size": 27565 // Update with the actual size of your image
+  "size": 27565
 };
 
 async function main() {
@@ -67,7 +67,7 @@ async function main() {
         "external": {
           "uri": link,
           "title": title,
-          "description": "Your description here", // Update with an appropriate description
+          "description": "Your description here",
           "thumb": imageBlobRef
         }
       };
@@ -98,4 +98,11 @@ async function main() {
   }
 }
 
-main();
+main().catch((error) => {
+  console.error(`[${new Date().toISOString()}] An error occurred:`, error);
+  if (error instanceof XRPCError) {
+    console.error('XRPCError details:', error.details); // Note: Adjust according to the actual properties of XRPCError
+  }
+  process.exit(1);
+});
+
