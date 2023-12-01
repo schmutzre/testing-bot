@@ -64,6 +64,7 @@ export default class Bot {
       throw new Error(`Image upload failed: ${response.statusText}`);
     }
 
-    return await response.json();
+    const blobData = await response.json();
+    return blobData.blob;
   }
 }

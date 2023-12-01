@@ -33,7 +33,7 @@ async function main() {
     if (papersData && papersData.length > 0) {
       for (const textData of papersData) {
         // Use the bot to upload the image and get the blob reference
-        const imageBlobRef = await bot.uploadImage('./image.png', 'image/png');
+        const imageBlobRef = await bot.uploadImage('./image.png');
 
         const websiteCardEmbed = {
           "$type": "app.bsky.embed.external",
@@ -74,4 +74,3 @@ async function main() {
 }
 
 main();
-
