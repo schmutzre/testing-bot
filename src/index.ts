@@ -95,7 +95,7 @@ async function main() {
     if (papersData && papersData.length > 0) {
       for (const textData of papersData) {
         // Upload a local image and get the blob reference
-        const imageBlobRef = await uploadImageAndGetBlobRef('path/to/your/local/image.jpg', 'your_access_token');
+        const imageBlobRef = await uploadImageAndGetBlobRef('pic.png');
 
         // Construct websiteCardEmbed with the dynamic blob reference
         const websiteCardEmbed = {
