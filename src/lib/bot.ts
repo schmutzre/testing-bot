@@ -1,7 +1,7 @@
-// Assuming bskyService and bskyAccount are correctly imported from the config file
-import { bskyService, bskyAccount } from './config';
+import { bskyService, bskyAccount } from './config.js';
 import atproto from '@atproto/api';
 import fs from 'fs';
+import path from 'path';
 const { BskyAgent } = atproto;
 
 export default class Bot {
@@ -13,18 +13,20 @@ export default class Bot {
   }
 
   async login() {
-    const session = await this.#agent.login(bskyAccount);
-    this.#accessToken = session.accessJwt; // Store the access token
+    try {
+      const session = await this.#agent.login(bskyAccount);
+      this.#accessToken = session.accessJwt; // Store the access token
+    } catch (error) {
+      throw new Error(`Login failed: ${error.message}`);
+    }
   }
 
   async post(content) {
-    // Ensure the Bot is logged in and has an access token
     if (!this.#accessToken) {
       throw new Error("Bot must be logged in to post content.");
     }
 
-    // Posting content using the Bluesky API
-    const response = await fetch('https://bsky.social/api/post', {
+    const response = await fetch('https://bsky.social/xrpc/com.atproto.repo.createRecord', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${this.#accessToken}`,
@@ -41,15 +43,14 @@ export default class Bot {
   }
 
   async uploadImage(imagePath) {
-    // Ensure the Bot is logged in and has an access token
     if (!this.#accessToken) {
       throw new Error("Bot must be logged in to upload images.");
     }
 
     const image = fs.readFileSync(imagePath);
-    const mimeType = 'image/jpeg'; // Adjust based on your image
+    const mimeType = path.extname(imagePath) === '.png' ? 'image/png' : 'image/jpeg';
 
-    const response = await fetch('https://bsky.social/api/uploadImage', {
+    const response = await fetch('https://bsky.social/xrpc/com.atproto.repo.uploadBlob', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${this.#accessToken}`,
@@ -65,3 +66,4 @@ export default class Bot {
     return await response.json();
   }
 }
+
