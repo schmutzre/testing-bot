@@ -1,7 +1,6 @@
 // node-fetch configuration
 import fetch, { Headers, Request, Response } from 'node-fetch';
 import pkg from '@atproto/api';
-const { BskyAgent, XRPCError } = pkg;
 
 if (typeof globalThis.fetch === 'undefined') {
   globalThis.fetch = fetch as any;
