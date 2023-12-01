@@ -61,7 +61,7 @@ interface Paper {
 const POSTED_PAPERS_PATH = './postedPapers.json';
 const postedPapers = JSON.parse(fs.readFileSync(POSTED_PAPERS_PATH, 'utf8'));
 
-async function uploadImageAndGetBlobRef(imagePath: string, accessToken: string) {
+async function uploadImageAndGetBlobRef(imagePath: string) {
   const image = fs.readFileSync(imagePath);
   const mimeType = 'image/jpeg'; // Change based on your image type
 
