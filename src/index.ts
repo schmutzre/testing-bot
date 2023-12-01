@@ -97,10 +97,3 @@ async function main() {
     console.log(`[${new Date().toISOString()}] No new posts to publish.`);
   }
 }
-
-main().catch((error) => {
-  console.error(`[${new Date().toISOString()}] An error occurred:`, error.message);
-  // You can log the entire error object if needed for more details
-  console.error(error);
-  process.exit(1);
-});
