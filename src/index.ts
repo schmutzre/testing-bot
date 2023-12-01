@@ -69,7 +69,6 @@ async function uploadImageAndGetBlobRef(imagePath: string) {
     method: 'POST',
     headers: {
       'Content-Type': mimeType,
-      'Authorization': `Bearer ${accessToken}`,
     },
     body: image,
   });
