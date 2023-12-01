@@ -12,19 +12,32 @@ if (typeof globalThis.fetch === 'undefined') {
 
 BskyAgent.configure({
   fetch: async (
-    httpUri: any, // Update these types based on the expected types or keep as 'any' for now
+    httpUri: any, 
     httpMethod: any, 
     httpHeaders: any, 
     httpReqBody: any
   ) => {
+    console.log('API Request Details:');
+    console.log('URI:', httpUri);
+    console.log('Method:', httpMethod);
+    console.log('Headers:', httpHeaders);
+    console.log('Body:', httpReqBody);
+
     const requestOptions = {
       method: httpMethod,
       headers: new Headers(httpHeaders),
       body: httpReqBody,
     };
+
     try {
       const response = await fetch(httpUri, requestOptions);
       const responseBody = await response.text();
+
+      console.log('API Response Details:');
+      console.log('Status:', response.status);
+      console.log('Headers:', response.headers);
+      console.log('Body:', responseBody);
+
       return {
         status: response.status,
         headers: Object.fromEntries(response.headers),
@@ -36,6 +49,7 @@ BskyAgent.configure({
     }
   },
 });
+
 
 // Rest of your script
 import Bot from "./lib/bot.js";
