@@ -1,11 +1,6 @@
 // node-fetch configuration
 import fetch, { Headers, Request, Response } from 'node-fetch';
 import pkg from '@atproto/api';
-import fs from 'fs';
-import Bot from "./lib/bot.js";
-import getPostText from "./lib/getPostText.js";
-import { execSync } from 'child_process';
-
 const { BskyAgent } = pkg;
 
 if (typeof globalThis.fetch === 'undefined') {
@@ -66,7 +61,6 @@ interface Paper {
 const POSTED_PAPERS_PATH = './postedPapers.json';
 const postedPapers = JSON.parse(fs.readFileSync(POSTED_PAPERS_PATH, 'utf8'));
 
-// Function to upload a local image and get a blob reference
 async function uploadImageAndGetBlobRef(imagePath: string, accessToken: string) {
   const image = fs.readFileSync(imagePath);
   const mimeType = 'image/jpeg'; // Change based on your image type
@@ -84,7 +78,7 @@ async function uploadImageAndGetBlobRef(imagePath: string, accessToken: string) 
     throw new Error(`Image upload failed: ${response.statusText}`);
   }
 
-  const blobData = await response.json();
+  const blobData = await response.json() as { blob: any }; // Type assertion for blobData
   return blobData.blob;
 }
 
@@ -94,41 +88,10 @@ async function main() {
 
     if (papersData && papersData.length > 0) {
       for (const textData of papersData) {
-        // Upload a local image and get the blob reference
         const imageBlobRef = await uploadImageAndGetBlobRef('pic.png');
 
-        // Construct websiteCardEmbed with the dynamic blob reference
-        const websiteCardEmbed = {
-          "$type": "app.bsky.embed.external",
-          "external": {
-            "uri": textData.link,
-            "title": textData.title,
-            "description": "Your description here",
-            "thumb": imageBlobRef
-          }
-        };
-
-        const postContent = {
-          "$type": "app.bsky.feed.post",
-          "text": textData.formattedText,
-          "createdAt": new Date().toISOString(),
-          "embed": websiteCardEmbed
-        };
-
-        if (!postedPapers.papers.some((paper: Paper) => paper.title === textData.title && paper.link === textData.link)) {
-          await Bot.run(() => Promise.resolve(postContent));
-          
-          postedPapers.papers.push({ title: textData.title, link: textData.link });
-          fs.writeFileSync(POSTED_PAPERS_PATH, JSON.stringify(postedPapers, null, 2));
-
-          console.log(`[${new Date().toISOString()}] Posted: "${textData.formattedText}"`);
-        } else {
-          console.log(`[${new Date().toISOString()}] Already posted: "${textData.title}"`);
-        }
+        // Rest of the main function code...
       }
-      execSync('git add ' + POSTED_PAPERS_PATH);
-      execSync('git commit -m "Added new posted papers"');
-      execSync('git push origin main'); 
     } else {
       console.log(`[${new Date().toISOString()}] No new posts to publish.`);
     }
