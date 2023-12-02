@@ -14,9 +14,13 @@ export default class Bot {
 
 async login() {
     try {
-      // Assuming the response from the login method is the session object itself
       const session = await this.#agent.login(bskyAccount);
-      this.#accessToken = session.accessJwt; // Store the access token
+      // Check if session contains the accessJwt
+      if (session && session.accessJwt) {
+        this.#accessToken = session.accessJwt; // Store the access token
+      } else {
+        throw new Error("Login response does not contain accessJwt");
+      }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       throw new Error(`Login failed: ${errorMsg}`);
