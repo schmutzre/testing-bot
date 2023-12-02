@@ -1,18 +1,33 @@
 import { bskyAccount, bskyService } from "./config.js";
 import atproto from "@atproto/api";
-const { BskyAgent } = atproto;
+const { BskyAgent, RichText } = atproto;
+
+type BotOptions = {
+  service: string | URL;
+  dryRun: boolean;
+};
 
 export default class Bot {
   #agent;
   #accessToken = '';
 
-  constructor() {
-    this.#agent = new BskyAgent({ service: bskyService });
+  static defaultOptions: BotOptions = {
+    service: bskyService,
+    dryRun: false,
+  } as const;
+
+  constructor(service = bskyService) {
+    this.#agent = new BskyAgent({ service });
   }
 
   async login() {
-    const response = await this.#agent.login(bskyAccount);
-    this.#accessToken = response.accessJwt; // Store the access token
+    try {
+      const response = await this.#agent.login(bskyAccount);
+      this.#accessToken = response.accessJwt; // Assuming the response has an accessJwt property
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    }
   }
 
   getAccessToken() {
@@ -24,21 +39,22 @@ export default class Bot {
       throw new Error("Bot must be logged in to post content.");
     }
 
-    const response = await fetch('https://bsky.social/xrpc/com.atproto.repo.createRecord', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.#accessToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(content)
-    });
+    const record = {
+      text: content.text,
+      embed: content.embed,
+    };
 
-    if (!response.ok) {
-      throw new Error(`Failed to post content: ${response.statusText}`);
-    }
-
-    return await response.json();
+    return this.#agent.post(record);
   }
 
-  // Add other methods as needed
+  static async run(getPostContent, botOptions = {}) {
+    const options = { ...this.defaultOptions, ...botOptions };
+    const bot = new Bot(options.service);
+    await bot.login();
+    const content = await getPostContent();
+    if (!options.dryRun) {
+      await bot.post(content);
+    }
+    return content;
+  }
 }
