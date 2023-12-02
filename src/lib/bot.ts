@@ -1,5 +1,7 @@
-import { bskyService, bskyAccount } from './config.js';
-import atproto from '@atproto/api';
+import { bskyAccount, bskyService } from "./config.js";
+import atproto from "@atproto/api";
+import axios from 'axios';
+import { load } from 'cheerio';
 import fs from 'fs';
 import path from 'path';
 const { BskyAgent } = atproto;
@@ -12,22 +14,12 @@ export default class Bot {
     this.#agent = new BskyAgent({ service: bskyService });
   }
 
-async login() {
-    try {
-      const session = await this.#agent.login(bskyAccount);
-      // Check if session contains the accessJwt
-      if (session && session.accessJwt) {
-        this.#accessToken = session.accessJwt; // Store the access token
-      } else {
-        throw new Error("Login response does not contain accessJwt");
-      }
-    } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
-      throw new Error(`Login failed: ${errorMsg}`);
-    }
+  async login() {
+    const session = await this.#agent.login(bskyAccount);
+    this.#accessToken = session.accessJwt; // Store the access token
   }
 
-  async post(content: { text: string; embed: any }) {
+  async post(content) {
     if (!this.#accessToken) {
       throw new Error("Bot must be logged in to post content.");
     }
@@ -48,28 +40,45 @@ async login() {
     return await response.json();
   }
 
-  async uploadImage(imagePath: string): Promise<any> {
-    if (!this.#accessToken) {
-      throw new Error("Bot must be logged in to upload images.");
+  async fetchEmbedUrlCard(url: string): Promise<any> {
+    // the required fields for every embed card
+    const card = {
+      uri: url,
+      title: '',
+      description: '',
+    };
+
+    // fetch the HTML
+    const resp = await axios.get(url);
+    const $ = load(resp.data);
+
+    // parse out the "og:title" and "og:description" HTML meta tags
+    const titleTag = $('meta[property="og:title"]').attr('content');
+    if (titleTag) card.title = titleTag;
+
+    const descriptionTag = $('meta[property="og:description"]').attr('content');
+    if (descriptionTag) card.description = descriptionTag;
+
+    // if there is an "og:image" HTML meta tag, fetch and upload that image
+    const imageTag = $('meta[property="og:image"]').attr('content');
+    if (imageTag) {
+      const imgResp = await axios.get(imageTag, { responseType: 'arraybuffer' });
+      const blobResp = await axios.post(
+        'https://bsky.social/xrpc/com.atproto.repo.uploadBlob',
+        imgResp.data,
+        {
+          headers: {
+            'Content-Type': 'image/jpeg', // Adjust as necessary
+            Authorization: `Bearer ${this.#accessToken}`
+          },
+        }
+      );
+      card.thumb = blobResp.data.blob;
     }
 
-    const image = fs.readFileSync(imagePath);
-    const mimeType = path.extname(imagePath) === '.png' ? 'image/png' : 'image/jpeg';
-
-    const response = await fetch('https://bsky.social/xrpc/com.atproto.repo.uploadBlob', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.#accessToken}`,
-        'Content-Type': mimeType
-      },
-      body: image
-    });
-
-    if (!response.ok) {
-      throw new Error(`Image upload failed: ${response.statusText}`);
-    }
-
-    const blobData = await response.json();
-    return blobData.blob;
+    return {
+      $type: 'app.bsky.embed.external',
+      external: card,
+    };
   }
 }
