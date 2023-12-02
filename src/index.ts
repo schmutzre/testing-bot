@@ -1,5 +1,7 @@
+// index.ts
 import Bot from "./lib/bot.js";
 import getPostText from "./lib/getPostText.js";
+import fetchEmbedUrlCard from "./lib/fetchEmbedUrlCard.js"; // Assuming this function is in a separate file
 import fs from 'fs';
 import { execSync } from 'child_process';
 
@@ -13,27 +15,21 @@ const postedPapers = JSON.parse(fs.readFileSync(POSTED_PAPERS_PATH, 'utf8'));
 
 async function main() {
   const papersData = await getPostText();
-  const bot = new Bot();
-
-  // Log in to the Bluesky API
-  await bot.login();
 
   if (papersData && papersData.length > 0) {
     for (const textData of papersData) {
-      const websiteCardEmbed = await bot.fetchEmbedUrlCard(textData.link);
-
-      const postContent = {
-        "$type": "app.bsky.feed.post",
-        "text": textData.formattedText,
-        "createdAt": new Date().toISOString(),
-        "embed": websiteCardEmbed
-      };
-
       if (!postedPapers.papers.some((paper: Paper) => paper.title === textData.title && paper.link === textData.link)) {
-        await bot.post(postContent);
+        // Fetch and prepare website card data
+        const embedCard = await fetchEmbedUrlCard(textData.link);
+
+        // Combine text and embed card for posting
+        const combinedPost = `${textData.formattedText}\n${embedCard}`;
+        await Bot.run(() => Promise.resolve(combinedPost));
+
         postedPapers.papers.push({ title: textData.title, link: textData.link });
         fs.writeFileSync(POSTED_PAPERS_PATH, JSON.stringify(postedPapers, null, 2));
-        console.log(`[${new Date().toISOString()}] Posted: "${textData.formattedText}"`);
+
+        console.log(`[${new Date().toISOString()}] Posted: "${combinedPost}"`);
       } else {
         console.log(`[${new Date().toISOString()}] Already posted: "${textData.title}"`);
       }
