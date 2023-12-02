@@ -14,17 +14,14 @@ export default class Bot {
 
 async login() {
     try {
-      const response = await this.#agent.login(bskyAccount);
-      if (!response.ok) {
-        throw new Error(`Login failed: ${response.statusText}`);
-      }
-      const session = await response.json();
+      // Assuming the response from the login method is the session object itself
+      const session = await this.#agent.login(bskyAccount);
       this.#accessToken = session.accessJwt; // Store the access token
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       throw new Error(`Login failed: ${errorMsg}`);
     }
-}
+  }
 
   async post(content: { text: string; embed: any }) {
     if (!this.#accessToken) {
