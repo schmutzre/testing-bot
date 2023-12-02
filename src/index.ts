@@ -14,33 +14,36 @@ const postedPapers = JSON.parse(fs.readFileSync(POSTED_PAPERS_PATH, 'utf8'));
 
 async function main() {
   const papersData = await getPostText();
-  const bot = new Bot();
+  const bot = new Bot(); // Instantiate Bot class
 
+  // Log in to the Bluesky API
   await bot.login();
 
   if (papersData && papersData.length > 0) {
     for (const textData of papersData) {
-      if (!postedPapers.papers.some(p => p.title === textData.title && p.link === textData.link)) {
-        const embedCard = await fetchEmbedUrlCard(bot.getAccessToken(), textData.link);
+      const { title, link, formattedText } = textData;
+
+      if (!postedPapers.papers.some((p: Paper) => p.title === title && p.link === link)) {
+        const embedCard = await fetchEmbedUrlCard(bot.getAccessToken(), link);
 
         const postContent = {
-          text: textData.formattedText,
+          text: formattedText,
           embed: embedCard,
         };
 
-        await Bot.run(() => Promise.resolve(postContent));
+        await bot.post(postContent);
 
-        postedPapers.papers.push({ title: textData.title, link: textData.link });
+        postedPapers.papers.push({ title, link });
         fs.writeFileSync(POSTED_PAPERS_PATH, JSON.stringify(postedPapers, null, 2));
 
-        console.log(`[${new Date().toISOString()}] Posted: "${textData.formattedText}"`);
+        console.log(`[${new Date().toISOString()}] Posted: "${formattedText}"`);
       } else {
-        console.log(`[${new Date().toISOString()}] Already posted: "${textData.title}"`);
+        console.log(`[${new Date().toISOString()}] Already posted: "${title}"`);
       }
     }
     execSync('git add ' + POSTED_PAPERS_PATH);
     execSync('git commit -m "Added new posted papers"');
-    execSync('git push origin main');
+    execSync('git push origin main'); 
   } else {
     console.log(`[${new Date().toISOString()}] No new posts to publish.`);
   }
