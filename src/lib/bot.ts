@@ -12,15 +12,19 @@ export default class Bot {
     this.#agent = new BskyAgent({ service: bskyService });
   }
 
-  async login() {
+async login() {
     try {
-      const session = await this.#agent.login(bskyAccount);
+      const response = await this.#agent.login(bskyAccount);
+      if (!response.ok) {
+        throw new Error(`Login failed: ${response.statusText}`);
+      }
+      const session = await response.json();
       this.#accessToken = session.accessJwt; // Store the access token
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       throw new Error(`Login failed: ${errorMsg}`);
     }
-  }
+}
 
   async post(content: { text: string; embed: any }) {
     if (!this.#accessToken) {
