@@ -1,6 +1,5 @@
 import Bot from "./lib/bot.js";
 import getPostText from "./lib/getPostText.js";
-import fetchEmbedUrlCard from './fetchEmbedUrlCard.js';
 import fs from 'fs';
 import { execSync } from 'child_process';
 
@@ -14,25 +13,14 @@ const postedPapers = JSON.parse(fs.readFileSync(POSTED_PAPERS_PATH, 'utf8'));
 
 async function main() {
   const papersData = await getPostText();
-  const bot = new Bot(); // Instantiate Bot class
-
-  // Log in to the Bluesky API
-  await bot.login();
 
   if (papersData && papersData.length > 0) {
     for (const textData of papersData) {
       const { title, link, formattedText } = textData;
 
-      if (!postedPapers.papers.some((p: Paper) => p.title === title && p.link === link)) {
-        const embedCard = await fetchEmbedUrlCard(bot.getAccessToken(), link);
-
-        const postContent = {
-          text: formattedText,
-          embed: embedCard,
-        };
-
-        await bot.post(postContent);
-
+      if (!postedPapers.papers.some((paper: Paper) => paper.title === title && paper.link === link)) {
+        await Bot.run(() => Promise.resolve(formattedText));
+        
         postedPapers.papers.push({ title, link });
         fs.writeFileSync(POSTED_PAPERS_PATH, JSON.stringify(postedPapers, null, 2));
 
@@ -50,3 +38,6 @@ async function main() {
 }
 
 main();
+
+
+

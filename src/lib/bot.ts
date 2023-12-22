@@ -1,35 +1,65 @@
 import { bskyAccount, bskyService } from "./config.js";
+import type {
+  AtpAgentLoginOpts,
+  AtpAgentOpts,
+  AppBskyFeedPost,
+} from "@atproto/api";
 import atproto from "@atproto/api";
-const { BskyAgent } = atproto;
+const { BskyAgent, RichText } = atproto;
+
+type BotOptions = {
+  service: string | URL;
+  dryRun: boolean;
+};
 
 export default class Bot {
   #agent;
-  #accessToken = '';
 
-  constructor() {
-    this.#agent = new BskyAgent({ service: bskyService });
+  static defaultOptions: BotOptions = {
+    service: bskyService,
+    dryRun: false,
+  } as const;
+
+  constructor(service: AtpAgentOpts["service"]) {
+    this.#agent = new BskyAgent({ service });
   }
 
-  async login() {
-    const response = await this.#agent.login(bskyAccount);
-    const session = await response.json();
-    this.#accessToken = session.accessJwt; // Store the access token
+  login(loginOpts: AtpAgentLoginOpts) {
+    return this.#agent.login(loginOpts);
   }
 
-  getAccessToken() {
-    return this.#accessToken;
-  }
-
-  async post(content: { text: string; embed: any }) {
-    if (!this.#accessToken) {
-      throw new Error("Bot must be logged in to post content.");
+  async post(
+    text:
+      | string
+      | (Partial<AppBskyFeedPost.Record> &
+          Omit<AppBskyFeedPost.Record, "createdAt">)
+  ) {
+    if (typeof text === "string") {
+      const richText = new RichText({ text });
+      await richText.detectFacets(this.#agent);
+      const record = {
+        text: richText.text,
+        facets: richText.facets,
+      };
+      return this.#agent.post(record);
+    } else {
+      return this.#agent.post(text);
     }
+  }
 
-    const record = {
-      text: content.text,
-      embed: content.embed,
-    };
-
-    return this.#agent.post(record);
+  static async run(
+    getPostText: () => Promise<string>,
+    botOptions?: Partial<BotOptions>
+  ) {
+    const { service, dryRun } = botOptions
+      ? Object.assign({}, this.defaultOptions, botOptions)
+      : this.defaultOptions;
+    const bot = new Bot(service);
+    await bot.login(bskyAccount);
+    const text = await getPostText();
+    if (!dryRun) {
+      await bot.post(text);
+    }
+    return text;
   }
 }
