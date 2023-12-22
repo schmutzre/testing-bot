@@ -37,7 +37,7 @@ export default class Bot {
     if (typeof text === "string") {
       const richText = new RichText({ text });
       await richText.detectFacets(this.#agent);
-      const record = {
+	const record = {
         text: richText.text,
         facets: richText.facets,
       };
@@ -63,3 +63,4 @@ export default class Bot {
     return text;
   }
 }
+
